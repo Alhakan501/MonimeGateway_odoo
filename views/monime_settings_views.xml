@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+
+    <record id="payment_provider_form_monime" model="ir.ui.view">
+
+        <field name="name">payment.provider.form.monime</field>
+        <field name="model">payment.provider</field>
+
+        <!-- IMPORTANT:
+             Use the actual XML ID of Odoo's payment provider form -->
+        <field name="inherit_id" ref="payment.payment_provider_form"/>
+
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="readonly">True</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='code']" position="attributes">
+                <attribute name="readonly">True</attribute>
+            </xpath>
+
+        </field>
+
+    </record>
+
+</odoo>
+
