@@ -1,0 +1,145 @@
+
+
+.o_monime_box {
+    /* 1. Structural layout wrapper */
+    border: 1px solid #e3e6ea;
+    border-left: 5px solid #0a7cff;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    background: #f8fbff;
+
+    /* Typography */
+    .o_monime_title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #0a7cff;
+    }
+
+    .o_monime_subtitle {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+    }
+
+    /* 2. Custom Background Settings for Text and Data Inputs */
+    .o_field_widget:not(.boolean_toggle),
+    .o_field_widget:not(.boolean_toggle) .o_input,
+    .o_field_widget:not(.boolean_toggle) input,
+    .o_input,
+    input.o_input {
+        background-color: #ffffff !important;
+    }
+
+    /* Global styling adjustments for Text Inputs & Placeholders */
+    .o_input,
+    input.o_input,
+    .o_field_widget input:not([type="checkbox"]) {
+        border: 1px solid #ced4da !important;
+        border-radius: 8px;
+        padding: 8px 12px;
+        min-height: 40px;
+        color: #212529;
+        transition: border-color .2s, box-shadow .2s;
+
+        &::placeholder {
+            color: #adb5bd;
+            font-style: italic;
+        }
+
+        &:hover {
+            border-color: #0a7cff !important;
+        }
+
+        &:focus {
+            border-color: #0a7cff !important;
+            box-shadow: 0 0 0 3px rgba(10, 124, 255, .18);
+            outline: none;
+        }
+    }
+
+    /* Standard field form labels */
+    .o_form_label {
+        font-weight: 600;
+        color: #344054;
+    }
+
+    /* --- 3. ZERO-SHIFT NATIVE ODOO CHECKBOX OVERRIDES --- */
+    /* Target the cell wrapper that handles checkbox grouping */
+    .o_cell {
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    /* Target Odoo's native checkbox bootstrap structure safely */
+    .form-check {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        padding-left: 0 !important;
+        margin: 0 !important;
+        min-height: auto !important;
+
+        /* Standardized sizing fixes layout movement artifacts on active clicks */
+        input[type="checkbox"].form-check-input {
+            appearance: none !important;
+            -webkit-appearance: none !important;
+            
+            /* Keeps the box locked inside standard text alignment tracks */
+            position: relative !important;
+            top: 0 !important;
+            left: 0 !important;
+            float: none !important;
+            
+            /* Native sizing anchors prevent bounding layout shifts */
+            width: 16px !important;
+            height: 16px !important;
+            margin: 0 8px 0 0 !important; 
+            
+            background-color: #ffffff !important;
+            border: 2px solid #ced4da !important;
+            border-radius: 4px !important;
+            cursor: pointer;
+            display: inline-grid !important;
+            place-content: center;
+            transform: none !important; /* Neutralizes active click transformations */
+            transition: border-color 0.15s, background-color 0.15s;
+
+            &:hover {
+                border-color: #0a7cff !important;
+            }
+
+            &:focus {
+                border-color: #0a7cff !important;
+                box-shadow: none !important; /* Disables focus shifts */
+                outline: none !important;
+            }
+
+            /* Checked Action State */
+            &:checked {
+                background-color: #0a7cff !important;
+                border-color: #0a7cff !important;
+
+                &::before {
+                    content: "" !important;
+                    width: 8px;
+                    height: 5px;
+                    border-left: 2px solid #ffffff;
+                    border-bottom: 2px solid #ffffff;
+                    transform: rotate(-45deg) translate(0px, -1px);
+                }
+            }
+        }
+
+        /* Forces check labels to lock next to the control box */
+        .form-check-label {
+            font-weight: 500;
+            color: #344054;
+            cursor: pointer;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: inline-block !important;
+        }
+    }
+}
+

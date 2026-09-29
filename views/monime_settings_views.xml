@@ -1,29 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <odoo>
-
     <record id="payment_provider_form_monime" model="ir.ui.view">
-
-        <field name="name">payment.provider.form.monime</field>
+        <field name="name">Monime Provider Form</field>
         <field name="model">payment.provider</field>
-
-        <!-- IMPORTANT:
-             Use the actual XML ID of Odoo's payment provider form -->
         <field name="inherit_id" ref="payment.payment_provider_form"/>
-
         <field name="arch" type="xml">
 
-            <xpath expr="//field[@name='name']" position="attributes">
-                <attribute name="readonly">True</attribute>
+            <!-- 1. Credentials Setup -->
+            <group name="provider_credentials" position="inside">
+                <div invisible="code != 'monime'" class="col-12 o_monime_box">
+                    <div class="o_monime_title">Monime Gateway</div>
+                    <div class="o_monime_subtitle">
+                        Enter the credentials from your Monime dashboard.
+                    </div>
+                    <group>
+                        <field name="monime_space_id"
+                               placeholder="e.g. spc-1234abcd"
+                               required="code == 'monime' and state != 'disabled'"/>
+                        <field name="monime_token"
+                               password="True"
+                               required="code == 'monime' and state != 'disabled'"/>
+                        <field name="monime_webhook_url"
+                               readonly="1"
+                               widget="CopyClipboardChar"/>			
+                        <field name="monime_webhook_token" password="True"/>
+                    </group>
+                </div>
+            </group>
+			<xpath expr="//page[@name='configuration']/group[1]" position="attributes">
+                		<attribute name="invisible">code == 'monime'</attribute>
+			</xpath>
+	    		<xpath expr="//page[@name='messages']" position="attributes">
+		    		<attribute name="invisible">code == 'monime'</attribute>
+			</xpath>
+
+            <!-- 2. Configuration Settings (Corrected via XPath) -->
+            <xpath expr="//page[@name='configuration']" position="inside">
+                <div invisible="code != 'monime'" class="o_monime_box">
+                    <separator string="Payment Options Configuration"/>
+                    <div class="text-muted mb-3">
+                        Configure which payment methods and providers are available to customers.
+                    </div>
+
+                    <group>
+                        <group string="Account">
+                            <field name="monime_financial_account" placeholder="e.g. fac_xxxxxxxxxxxx"/>
+                        </group>
+                        <group string="Card">
+                            <field name="monime_card_disable"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <group string="Mobile Money">
+                            <field name="monime_momo_disable"/>
+                            <field name="monime_momo_disable_providers" invisible="monime_momo_disable"/>
+                        </group>
+                        <group string="Bank Transfer">
+                            <field name="monime_bank_disable"/>
+                            <field name="monime_bank_disable_providers" invisible="monime_bank_disable"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <group string="Digital Wallets">
+                            <field name="monime_wallet_disable"/>
+                            <field name="monime_wallet_disable_providers" invisible="monime_wallet_disable"/>
+                        </group>
+                    </group>
+                </div>
             </xpath>
 
-            <xpath expr="//field[@name='code']" position="attributes">
-                <attribute name="readonly">True</attribute>
+            <!-- 3. Form Adjustments -->
+            <xpath expr="//field[@name='company_id']" position="attributes">
+                <attribute name="invisible">code == 'monime'</attribute>
             </xpath>
 
         </field>
-
     </record>
-
 </odoo>
-

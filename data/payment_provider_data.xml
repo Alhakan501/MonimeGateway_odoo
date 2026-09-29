@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo noupdate="0">
-
-	<record id="payment_provider_monime" model="payment.provider">
-		<field name="name">Monime</field>
-		<field name="code">monime</field>
-		<field name="state">disabled</field>
-        <!-- Dynamic loading of the binary icon asset -->
-		<field name="image_128" type="base64" eval="base64.b64encode(tools.file_open('MonimeGateway/static/src/img/monime_icon.png', 'rb').read())"/>
-
-	</record>
-
+ <odoo noupdate="1"> 
+    <record id="payment_provider_monime" model="payment.provider">
+        <field name="name">Monime</field>
+        <field name="code">monime</field>
+	<field name="state">disabled</field>
+	<field name="payment_method_ids"
+       		eval="[Command.set([ref('MonimeGateway.monime_payment_method')])]"/>
+        <field name="image_128" type="base64" file="MonimeGateway/static/description/icon.png"/>
+    </record>
 </odoo>

@@ -1,1 +1,6 @@
-
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="redirect_form" name="Monime Redirect Form">
+        <form t-att-action="api_url" method="get" name="o_payment_redirect_form"/>
+    </template>
+</odoo>
