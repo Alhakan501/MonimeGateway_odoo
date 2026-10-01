@@ -27,54 +27,53 @@ class MonimeController(http.Controller):
 
         reference = data.get("reference")
 
-        # if not reference:
-        #     _logger.warning(
-        #         "Monime cancel callback missing reference: %(data)s", {"data": data}
-        #     )
-        #     return request.not_found()
-        #
-        # tx = (
-        #     request.env["payment.transaction"]
-        #     .sudo()
-        #     .search([("reference", "=", reference)], limit=1)
-        # )
-        # if not tx:
-        #     return request.not_found()
-        #
+        if not reference:
+            _logger.warning(
+                "Monime cancel callback missing reference: %(data)s", {"data": data}
+            )
+            return request.not_found()
 
-        # if tx.state == "draft":
-        #     _logger.info(
-        #         "Transaction %(ref)s is still draft; canceling it.",
-        #         {"ref": tx.reference},
-        #     )
-        #
-        #     tx._set_canceled()
-        #
-        #     try:
-        #         tx.sale_order_ids.action_cancel()
-        #         message = "Payment cancelled successfully."
-        #     except Exception as e:
-        #         _logger.warning(
-        #             "Could not cancel sale order for tx %(ref)s: %(err)s",
-        #             {"ref": tx.reference, "err": str(e)},
-        #         )
-        #         message = ("Could not cancel sale order for tx %(ref)s: %(err)s",)
-        #
-        # elif tx.state == "cancel":
-        #     _logger.info(
-        #         "Transaction %(ref)s is already canceled; Create a new order",
-        #         {"ref": tx.reference},
-        #     )
-        #     message = "Transaction %(ref)s is already canceled; Create a new order"
-        # else:
-        #     _logger.info(
-        #         "Transaction %(ref)s has already been processed; skipping cancellation.",
-        #         {"ref": tx.reference, "state": tx.state},
-        #     )
-        #     message = (
-        #         "Transaction %(ref)s has already been processed; skipping cancellation.",
-        #     )
-        #
+        tx = (
+            request.env["payment.transaction"]
+            .sudo()
+            .search([("reference", "=", reference)], limit=1)
+        )
+        if not tx:
+            return request.not_found()
+
+        if tx.state == "draft":
+            _logger.info(
+                "Transaction %(ref)s is still draft; canceling it.",
+                {"ref": tx.reference},
+            )
+
+            tx._set_canceled()
+
+            try:
+                tx.sale_order_ids.action_cancel()
+                message = "Payment cancelled successfully."
+            except Exception as e:
+                _logger.warning(
+                    "Could not cancel sale order for tx %(ref)s: %(err)s",
+                    {"ref": tx.reference, "err": str(e)},
+                )
+                message = ("Could not cancel sale order for tx %(ref)s: %(err)s",)
+
+        elif tx.state == "cancel":
+            _logger.info(
+                "Transaction %(ref)s is already canceled; Create a new order",
+                {"ref": tx.reference},
+            )
+            message = "Transaction %(ref)s is already canceled; Create a new order"
+        else:
+            _logger.info(
+                "Transaction %(ref)s has already been processed; skipping cancellation.",
+                {"ref": tx.reference, "state": tx.state},
+            )
+            message = (
+                "Transaction %(ref)s has already been processed; skipping cancellation.",
+            )
+
         return request.redirect(f"/payment/status?reference={reference}")
 
     @http.route(
@@ -87,69 +86,68 @@ class MonimeController(http.Controller):
 
         reference = data.get("reference")
 
-        # if not reference:
-        #     _logger.warning(
-        #         "Monime success callback missing reference: %(data)s", {"data": data}
-        #     )
-        #     return request.not_found()
-        #
-        # data["status"] = "success"
-        #
-        # tx = (
-        #     request.env["payment.transaction"]
-        #     .sudo()
-        #     .search([("reference", "=", reference)], limit=1)
-        # )
-        # if not tx:
-        #     return request.not_found()
-        # if tx.state == "draft":
-        #     _logger.info(
-        #         "Transaction %(ref)s is still draft; processing success.",
-        #         {"ref": tx.reference},
-        #     )
-        #
-        #     data["status"] = "success"
-        #     data["amount"] = float(data["amount"])
-        #     try:
-        #         print("bout to... sart process")
-        #         tx._process("monime", data)
-        #         tx._post_process()
-        #
-        #         message = "Payment completed successfully."
-        #
-        #     except Exception as e:
-        #         _logger.exception(
-        #             "Could not process successful payment for tx %(ref)s",
-        #             {"ref": tx.reference},
-        #         )
-        #
-        #         message = "We could not complete the payment. Please try again."
-        #
-        # elif tx.state == "cancel":
-        #     _logger.info(
-        #         "Transaction %(ref)s is already canceled; ignoring success callback.",
-        #         {"ref": tx.reference},
-        #     )
-        #
-        #     message = "This payment was already cancelled and cannot be completed."
-        #
-        # elif tx.state == "done":
-        #     _logger.info(
-        #         "Transaction %(ref)s is already completed.",
-        #         {"ref": tx.reference},
-        #     )
-        #
-        #     message = "This payment has already been completed."
-        #
-        # else:
-        #     _logger.info(
-        #         "Transaction %(ref)s has already been processed; state=%(state)s.",
-        #         {"ref": tx.reference, "state": tx.state},
-        #     )
-        #
-        #     message = "This payment has already been processed."
-        #
-        #
+        if not reference:
+            _logger.warning(
+                "Monime success callback missing reference: %(data)s", {"data": data}
+            )
+            return request.not_found()
+
+        data["status"] = "success"
+
+        tx = (
+            request.env["payment.transaction"]
+            .sudo()
+            .search([("reference", "=", reference)], limit=1)
+        )
+        if not tx:
+            return request.not_found()
+        if tx.state == "draft":
+            _logger.info(
+                "Transaction %(ref)s is still draft; processing success.",
+                {"ref": tx.reference},
+            )
+
+            data["status"] = "success"
+            data["amount"] = float(data["amount"])
+            try:
+                print("bout to... sart process")
+                tx._process("monime", data)
+                tx._post_process()
+
+                message = "Payment completed successfully."
+
+            except Exception as e:
+                _logger.exception(
+                    "Could not process successful payment for tx %(ref)s",
+                    {"ref": tx.reference},
+                )
+
+                message = "We could not complete the payment. Please try again."
+
+        elif tx.state == "cancel":
+            _logger.info(
+                "Transaction %(ref)s is already canceled; ignoring success callback.",
+                {"ref": tx.reference},
+            )
+
+            message = "This payment was already cancelled and cannot be completed."
+
+        elif tx.state == "done":
+            _logger.info(
+                "Transaction %(ref)s is already completed.",
+                {"ref": tx.reference},
+            )
+
+            message = "This payment has already been completed."
+
+        else:
+            _logger.info(
+                "Transaction %(ref)s has already been processed; state=%(state)s.",
+                {"ref": tx.reference, "state": tx.state},
+            )
+
+            message = "This payment has already been processed."
+
         return request.redirect(f"/payment/status?reference={reference}")
 
     @http.route(
@@ -191,9 +189,10 @@ class MonimeController(http.Controller):
             "status": status,
         }
         data = webhookCallbackState(data=callback)
+        print(order_reference)
         if not order_reference:
             _logger.warning(
-                "Monime webhook missing order_reference: %(data)s", {"data": result}
+                "Monime webhook missing order_reference: ", {"data": result}
             )
             return request.make_json_response({}, status=200)
 
