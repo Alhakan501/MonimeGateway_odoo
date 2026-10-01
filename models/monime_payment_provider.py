@@ -56,6 +56,7 @@ class MonimePaymentProvider(models.Model):
         string="Mobile Money - Disabled Providers",
         help="Comma-separated list of Mobile Money provider IDs to exclude "
         "for this session.",
+        default=None,
     )
 
     # Bank transfer
@@ -66,6 +67,7 @@ class MonimePaymentProvider(models.Model):
     monime_bank_disable_providers = fields.Char(
         string="Bank - Disabled Providers",
         help="Comma-separated list of bank provider IDs to disable.",
+        default=None,
     )
 
     # Digital wallets
@@ -76,6 +78,7 @@ class MonimePaymentProvider(models.Model):
     monime_wallet_disable_providers = fields.Char(
         string="Wallet - Disabled Providers",
         help="Comma-separated list of wallet provider IDs to disable.",
+        default=None,
     )
 
     # --------------------------------methods-------------------------------

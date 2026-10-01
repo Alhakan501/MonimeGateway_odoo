@@ -12,7 +12,7 @@ def buildLineItems(tx):
                     "name": line.product_id.name,
                     "price": {
                         "currency": tx.currency_id.name,
-                        "value": value,
+                        "value": int(line.price_unit * 100),
                     },
                     "quantity": int(line.product_uom_qty),
                     "images": (

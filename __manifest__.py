@@ -1,5 +1,5 @@
 {
-    "name": "MonimeGateway",
+    "name": "Monime Gateway",
     "version": "1.0.0",
     "summary": "Monime Gateway payment addon",
     "category": "Accounting/Payment Providers",
@@ -9,6 +9,9 @@
         "views/monime_redirection.xml",
         "views/monime_settings_views.xml",
     ],
+    "post_init_hook": "post_init_hook",
+    "uninstall_hook": "uninstall_hook",
+    "description": "Monime Official payment gateway addon for odoo ",
     "assets": {
         "web.assets_backend": [
             "MonimeGateway/static/src/style.css",
