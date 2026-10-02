@@ -23,8 +23,8 @@ class MonimeController(http.Controller):
     )
     def monime_cancel(self, **data):
 
-        data = data
-
+        data["status"] = "cancelled"
+        data["amount"] = float(data["amount"])
         reference = data.get("reference")
 
         if not reference:
@@ -40,24 +40,13 @@ class MonimeController(http.Controller):
         )
         if not tx:
             return request.not_found()
-
         if tx.state == "draft":
             _logger.info(
                 "Transaction %(ref)s is still draft; canceling it.",
                 {"ref": tx.reference},
             )
 
-            tx._set_canceled()
-
-            try:
-                tx.sale_order_ids.action_cancel()
-                message = "Payment cancelled successfully."
-            except Exception as e:
-                _logger.warning(
-                    "Could not cancel sale order for tx %(ref)s: %(err)s",
-                    {"ref": tx.reference, "err": str(e)},
-                )
-                message = ("Could not cancel sale order for tx %(ref)s: %(err)s",)
+            tx._process("monime", data)
 
         elif tx.state == "cancel":
             _logger.info(
@@ -92,8 +81,6 @@ class MonimeController(http.Controller):
             )
             return request.not_found()
 
-        data["status"] = "success"
-
         tx = (
             request.env["payment.transaction"]
             .sudo()
@@ -107,12 +94,11 @@ class MonimeController(http.Controller):
                 {"ref": tx.reference},
             )
 
-            data["status"] = "success"
+            data["status"] = "completed"
             data["amount"] = float(data["amount"])
             try:
                 print("bout to... sart process")
                 tx._process("monime", data)
-                tx._post_process()
 
                 message = "Payment completed successfully."
 
@@ -206,9 +192,10 @@ class MonimeController(http.Controller):
                 "No transaction found for Monime webhook reference %(ref)s",
                 {"ref": order_reference},
             )
-            return request.make_json_response({}, status=200)
 
-        if tx.state in ("done", "cancel"):
+            return
+
+        if tx.state in ("done", "cancel", "error"):
             _logger.info(
                 "Monime webhook for tx %(ref)s ignored — already in final state %(state)s.",
                 {"ref": tx.reference, "state": tx.state},
@@ -217,7 +204,7 @@ class MonimeController(http.Controller):
 
         try:
             tx._process("monime", data)
-            tx._post_process()
+
         except Exception:
             _logger.exception(
                 "Error processing Monime webhook for tx %(ref)s", {"ref": tx.reference}

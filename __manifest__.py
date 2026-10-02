@@ -9,6 +9,7 @@
         "views/monime_redirection.xml",
         "views/monime_settings_views.xml",
     ],
+    "post_init_hook": "post_init_hook",
     "description": "Monime Official payment gateway addon for odoo ",
     "assets": {
         "web.assets_backend": [
