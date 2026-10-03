@@ -23,8 +23,6 @@ class MonimeController(http.Controller):
     )
     def monime_cancel(self, **data):
 
-        data["status"] = "cancelled"
-        data["amount"] = float(data["amount"])
         reference = data.get("reference")
 
         if not reference:
@@ -38,6 +36,20 @@ class MonimeController(http.Controller):
             .sudo()
             .search([("reference", "=", reference)], limit=1)
         )
+        # provider = (
+        #     request.env["payment.provider"]
+        #     .sudo()
+        #     .search([("code", "=", "monime")], limit=1)
+        # )
+        # if provider.monime_webhook_token:
+        #     _logger.info(
+        #         "Monime webhook is configured; "
+        #         "success callback will only redirect for %s.",
+        #         tx.reference,
+        #     )
+        #
+        #     return request.redirect(f"/payment/status?reference={quote(reference)}")
+
         if not tx:
             return request.not_found()
         if tx.state == "draft":
@@ -46,6 +58,9 @@ class MonimeController(http.Controller):
                 {"ref": tx.reference},
             )
 
+            data["status"] = "cancelled"
+            data["amount"] = float(data["amount"])
+            data["orderNumber"] = None
             tx._process("monime", data)
 
         elif tx.state == "cancel":
@@ -86,18 +101,52 @@ class MonimeController(http.Controller):
             .sudo()
             .search([("reference", "=", reference)], limit=1)
         )
+        # provider = (
+        #     request.env["payment.provider"]
+        #     .sudo()
+        #     .search([("code", "=", "monime")], limit=1)
+        # )
+        # if provider.monime_webhook_token:
+        #     _logger.info(
+        #         "Monime webhook is configured; "
+        #         "success callback will only redirect for %s.",
+        #         tx.reference,
+        #     )
+        #
+        #     return request.redirect(f"/payment/status?reference={quote(reference)}")
+
         if not tx:
             return request.not_found()
+        try:
+            checkout_response = tx._send_api_request(
+                "GET",
+                f"checkout-sessions/{tx.monime_checkout_id}",
+            )
+
+            checkout = checkout_response.get("result") or {}
+
+            _logger.info(
+                "Monime checkout session for %s: %s",
+                tx.reference,
+                checkout,
+            )
+
+        except Exception:
+            _logger.exception(
+                "Could not retrieve Monime checkout session for %s",
+                tx.reference,
+            )
+
         if tx.state == "draft":
             _logger.info(
                 "Transaction %(ref)s is still draft; processing success.",
                 {"ref": tx.reference},
             )
-
+            data["orderNumber"] = checkout.get("orderNumber")
             data["status"] = "completed"
             data["amount"] = float(data["amount"])
             try:
-                print("bout to... sart process")
+                print("bout to... sart process", flush=True)
                 tx._process("monime", data)
 
                 message = "Payment completed successfully."
@@ -161,41 +210,30 @@ class MonimeController(http.Controller):
             return request.make_json_response(
                 {"status": "error", "message": result}, status=401
             )
-
+        print(result, flush=True)
         event_data = result.get("data")
         status = event_data["status"]
-        monime_reference = event_data["reference"]
-        metadata = event_data["metadata"]
-        order_reference = metadata["order_reference"]
-        callback = {
-            "monime_reference": monime_reference,
-            "order_reference": order_reference,
-            "amount": float(metadata["amount"]),
-            "currency_code": metadata["currency_code"],
-            "status": status,
-        }
-        data = webhookCallbackState(data=callback)
-        print(order_reference)
-        if not order_reference:
+        reference = event_data["reference"]
+        order_number = event_data["orderNumber"]
+        if not reference:
             _logger.warning(
                 "Monime webhook missing order_reference: ", {"data": result}
             )
-            return request.make_json_response({}, status=200)
+            return request.make_json_response({}, status=401)
 
         tx = (
             request.env["payment.transaction"]
             .sudo()
-            .search([("reference", "=", order_reference)], limit=1)
+            .search([("reference", "=", reference)], limit=1)
         )
         if not tx:
             _logger.warning(
                 "No transaction found for Monime webhook reference %(ref)s",
-                {"ref": order_reference},
+                {"ref": reference},
             )
 
             return
-
-        if tx.state in ("done", "cancel", "error"):
+        if tx.state in ("done", "cancel", "error") and tx.is_post_processed:
             _logger.info(
                 "Monime webhook for tx %(ref)s ignored — already in final state %(state)s.",
                 {"ref": tx.reference, "state": tx.state},
@@ -203,6 +241,15 @@ class MonimeController(http.Controller):
             return request.make_json_response({}, status=200)
 
         try:
+            callback = {
+                "reference": reference,
+                "amount": float(tx.amount),
+                "currency_code": tx.currency_id.name,
+                "status": status,
+                "orderNumber": order_number,
+            }
+            data = webhookCallbackState(data=callback)
+
             tx._process("monime", data)
 
         except Exception:

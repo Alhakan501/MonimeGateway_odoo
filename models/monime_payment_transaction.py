@@ -15,13 +15,14 @@ from ..utils.dto.build_line_items import buildLineItems
 from ..utils.dto.build_payment_options import buildPaymentOptions
 from ..utils.dto.build_callback_state import buildCallbackState
 from ..utils.consts import CANCEL_URL, CURRENCIES, MONIME_URL, SUCCESSS_URL
-from odoo import models
+from odoo import fields, models
 
 _logger = logging.getLogger(__name__)
 
 
 class MonimePaymentTransaction(models.Model):
     _inherit = "payment.transaction"
+    monime_checkout_id = fields.Char(string="Monime checkout id")
 
     @api.model
     def _search_by_reference(self, provider_code, payment_data):
@@ -66,8 +67,8 @@ class MonimePaymentTransaction(models.Model):
         res = super()._get_specific_rendering_values(processing_values)
         if self.provider_code != "monime":
             return res
-        monime_reference = str(uuid.uuid4())
-        query = url_encode(buildCallbackState(self, monime_reference))
+
+        query = url_encode(buildCallbackState(self))
         order_names = ", ".join(self.sale_order_ids.mapped("name"))
         base_url = self.provider_id.get_base_url()
 
@@ -77,12 +78,10 @@ class MonimePaymentTransaction(models.Model):
             description=f"Payment for order {order_names}",
             cancel_url=urls.url_join(base_url, CANCEL_URL + "?" + query),
             success_url=urls.url_join(base_url, SUCCESSS_URL + "?" + query),
-            callback_state=self.reference,
-            reference=monime_reference,
             financial_account_id=self.provider_id.monime_financial_account,
             payment_options=buildPaymentOptions(self),
+            reference=self.reference,
             metadata={
-                "order_reference": self.reference,
                 "amount": str(self.amount),
                 "currency_code": self.currency_id.name,
             },
@@ -90,6 +89,7 @@ class MonimePaymentTransaction(models.Model):
 
         try:
             response = self._send_api_request("POST", "checkout-sessions", json=payload)
+
         except ValidationError as e:
             _logger.error(
                 "Monime checkout session creation failed: %(err)s", {"err": str(e)}
@@ -105,8 +105,11 @@ class MonimePaymentTransaction(models.Model):
             )
             self._set_error(error_message)
             raise ValidationError(error_message)
-
         result = response.get("result") or {}
+
+        print("\n")
+        print(result, flush=True)
+        self.monime_checkout_id = result.get("id")
         redirect_url = result.get("redirectUrl")
 
         if not redirect_url:
@@ -127,7 +130,7 @@ class MonimePaymentTransaction(models.Model):
             return
 
         status = payment_data.get("status")
-        provider_reference = payment_data.get("id")
+        provider_reference = payment_data.get("orderNumber")
 
         if provider_reference:
             self.provider_reference = provider_reference
