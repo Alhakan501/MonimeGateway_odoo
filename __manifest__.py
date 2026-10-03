@@ -13,7 +13,7 @@
     "description": "Monime Official payment gateway addon for odoo ",
     "assets": {
         "web.assets_backend": [
-            "MonimeGateway/static/src/style.css",
+            "MonimeGateway_odoo/static/src/style.css",
         ],
     },
     "author": "Monime",

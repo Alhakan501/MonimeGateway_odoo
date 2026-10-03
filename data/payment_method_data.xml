@@ -4,6 +4,6 @@
         <field name="name">Monime</field>
         <field name="code">monime</field>
         <field name="sequence">50</field>
-        <field name="image" type="base64" file="MonimeGateway/static/description/icon.png"/>
+        <field name="image" type="base64" file="MonimeGateway_odoo/static/description/icon.png"/>
     </record>
 </odoo>
