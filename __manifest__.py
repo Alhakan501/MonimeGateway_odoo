@@ -18,7 +18,7 @@
     },
     "author": "Monime",
     "license": "LGPL-3",
-    "depends": ["payment"],
+    "depends": ["payment", "account"],
     "installable": True,
     "application": True,
 }
