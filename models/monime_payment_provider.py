@@ -129,5 +129,5 @@ class MonimePaymentProvider(models.Model):
 
     def _get_redirect_form_view(self, is_validation=False):
         if self.code == "monime":
-            return self.env.ref("MonimeGateway.redirect_form")
+            return self.env.ref("MonimeGateway_odoo.redirect_form")
         return super()._get_redirect_form_view(is_validation)
