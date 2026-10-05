@@ -3,18 +3,15 @@
 
 Monime Payment Gateway integration for **Odoo 19**.
 
-This module adds Monime as a payment provider in Odoo, allowing Odoo eCommerce customers to pay through Monime Checkout.
-
-> **Status:** 🚧 Work in Progress
-> The module is currently under active development.
+The Monime Gateway module adds Monime as a payment provider in Odoo, allowing Odoo eCommerce customers to complete payments through **Monime Checkout**.
 
 ## Overview
 
-**Monime Gateway** connects Odoo's payment framework with the [Monime](https://monime.io) payment platform.
+**Monime Gateway** connects Odoo's native payment framework with the [Monime](https://monime.io) payment platform.
 
-The module is designed to integrate with Odoo's native payment provider and transaction systems rather than implementing a separate checkout system.
+The module integrates with Odoo's existing payment provider and payment transaction systems rather than implementing a separate checkout system.
 
-The intended payment flow is:
+The payment flow is:
 
 ```text
 Odoo eCommerce
@@ -23,7 +20,7 @@ Odoo eCommerce
       ▼
 Odoo Payment Provider
       │
-      │ Create payment request
+      │ Create checkout session
       ▼
 Monime Checkout
       │
@@ -31,7 +28,7 @@ Monime Checkout
       ▼
 Monime
       │
-      │ Webhook
+      │ Webhook (optional)
       ▼
 Odoo Payment Transaction
       │
@@ -39,13 +36,19 @@ Odoo Payment Transaction
 Order Payment Confirmed
 ```
 
-## Features
+The module supports Odoo's standard eCommerce payment flow and uses Monime Checkout to process the actual payment.
 
-### Payment Provider
+> **Note:** Webhook integration is optional, but recommended. It provides a reliable server-to-server mechanism for synchronizing payment status between Monime and Odoo.
 
-Adds **Monime** as an Odoo payment provider.
+> **Current limitation:** The addon currently supports Odoo eCommerce payments but does **not** currently provide integration with Odoo POS terminals.
 
-The provider is registered using Odoo's native:
+---
+
+# Features
+
+## Payment Provider
+
+The module adds **Monime** as an Odoo payment provider using Odoo's native:
 
 ```text
 payment.provider
@@ -53,31 +56,61 @@ payment.provider
 
 model.
 
-### Monime Checkout
+The provider is registered with the code:
 
-Payments are intended to be created through Monime Checkout, allowing customers to complete payment using the payment methods supported by their Monime account.
+```text
+monime
+```
 
-### Payment Transactions
+and appears alongside Odoo's other payment providers.
 
-The module integrates with Odoo's payment transaction framework so that payment attempts can be associated with Odoo orders.
+## Monime Checkout
 
-### Webhooks
+The module creates Monime Checkout sessions for Odoo payment transactions.
 
-Monime webhooks are used to communicate payment status changes back to Odoo.
+Customers are redirected to Monime Checkout, where they complete their payment using the payment methods available through their Monime account.
 
-The webhook integration is responsible for updating the corresponding Odoo payment transaction after Monime processes the payment.
+## Payment Transactions
 
-### Odoo eCommerce Integration
+The module integrates with Odoo's native:
 
-The provider is designed to work with Odoo's standard eCommerce payment flow.
+```text
+payment.transaction
+```
 
-This means the customer can select:
+framework.
+
+Each Monime payment is associated with an Odoo payment transaction, allowing Odoo to track the payment status and associate the payment with the corresponding order.
+
+## Webhooks
+
+The module includes webhook support for receiving payment notifications from Monime.
+
+The webhook handler validates incoming Monime notifications and uses the notification data to identify and update the corresponding Odoo payment transaction.
+
+Webhook integration is **optional but recommended**.
+
+Without webhook processing, the payment can still use the normal Odoo payment return flow. However, webhooks provide an independent server-to-server notification mechanism and are therefore recommended for reliable payment status synchronization.
+
+## Odoo eCommerce Integration
+
+The provider integrates with Odoo's standard eCommerce payment flow.
+
+Customers can select:
 
 ```text
 Monime
 ```
 
-during checkout instead of using a completely separate payment implementation.
+during checkout and are redirected to Monime Checkout to complete their payment.
+
+No separate checkout system is required.
+
+## Odoo POS
+
+The addon **does not currently support Odoo POS terminal integration**.
+
+The current implementation is focused on Odoo's payment provider and eCommerce payment transaction framework. Monime is therefore available for supported Odoo website/eCommerce payment flows, but it is not currently integrated into the native Odoo POS payment terminal interface.
 
 ---
 
@@ -85,7 +118,7 @@ during checkout instead of using a completely separate payment implementation.
 
 ## Odoo
 
-Currently targeted at:
+The module targets:
 
 ```text
 Odoo 19
@@ -93,22 +126,21 @@ Odoo 19
 
 ## Monime
 
-You need a Monime account and the credentials required by the Monime API.
+A Monime account and the credentials required to access the Monime API are required.
 
-Depending on the implementation and environment, these may include:
+The provider configuration supports credentials including:
 
-* Monime API token
+* Monime API Token
 * Monime Space ID
-* Webhook secret
-* Financial account information
+* Webhook Secret
 
-Never commit these credentials to Git.
+The webhook secret is only required when webhook processing is enabled.
 
 ---
 
 # Installation
 
-Clone the repository into your Odoo addons directory:
+Clone or download the repository into your Odoo addons directory:
 
 ```bash
 git clone https://github.com/Alhakan501/MonimeGateway.git
@@ -122,7 +154,7 @@ odoo/
     └── MonimeGateway/
 ```
 
-The module directory should contain:
+The module contains the standard Odoo addon structure:
 
 ```text
 MonimeGateway/
@@ -137,7 +169,7 @@ MonimeGateway/
 
 ## Docker
 
-If Odoo is running with Docker and your addons directory is mounted as:
+When Odoo is running with Docker and the addons directory is mounted as:
 
 ```yaml
 volumes:
@@ -150,13 +182,13 @@ place the module inside:
 ./addons/MonimeGateway
 ```
 
-Then restart Odoo:
+Restart Odoo after installing the module files:
 
 ```bash
 docker compose restart odoo
 ```
 
-Update the Apps list from Odoo or upgrade the module from the command line.
+The module can then be installed or upgraded through the Odoo interface or command line.
 
 ---
 
@@ -166,16 +198,16 @@ From the Odoo interface:
 
 1. Open **Apps**.
 2. Enable developer mode if necessary.
-3. Click **Update Apps List**.
+3. Select **Update Apps List**.
 4. Search for:
 
 ```text
 Monime Gateway
 ```
 
-5. Click **Install**.
+5. Select **Install**.
 
-Alternatively, upgrade the module from the command line:
+The module can also be upgraded from the command line:
 
 ```bash
 docker compose exec odoo odoo \
@@ -184,15 +216,15 @@ docker compose exec odoo odoo \
     --stop-after-init
 ```
 
-Replace `odoo_test` with your Odoo database name.
+Replace `odoo_test` with the name of the Odoo database.
 
 ---
 
 # Configuration
 
-After installation, the Monime provider should appear in Odoo's payment provider configuration.
+After installation, **Monime** is available as an Odoo payment provider.
 
-The provider is represented internally by:
+The provider is represented by:
 
 ```text
 payment.provider
@@ -204,7 +236,9 @@ with the provider code:
 monime
 ```
 
-A typical provider configuration will contain credentials such as:
+The provider configuration contains the Monime credentials required to create checkout sessions and, when enabled, process webhook notifications.
+
+A typical configuration contains:
 
 ```text
 Monime API Token
@@ -212,17 +246,15 @@ Monime Space ID
 Webhook Secret
 ```
 
-Credentials should be entered through Odoo's configuration interface and must not be hard-coded into Python source files.
+The provider can then be enabled for the appropriate Odoo payment flow.
 
 ---
 
 # Payment Flow
 
-The intended payment flow is:
+## 1. Customer creates an order
 
-### 1. Customer creates an order
-
-The customer adds products to the Odoo shopping cart.
+The customer adds products to the Odoo shopping cart and proceeds to checkout.
 
 ```text
 Customer
@@ -231,7 +263,7 @@ Customer
 Odoo Cart
 ```
 
-### 2. Customer selects Monime
+## 2. Customer selects Monime
 
 During checkout, the customer selects:
 
@@ -239,9 +271,11 @@ During checkout, the customer selects:
 Monime
 ```
 
-### 3. Odoo creates a payment transaction
+as the payment method.
 
-Odoo creates a payment transaction associated with the order.
+## 3. Odoo creates a payment transaction
+
+Odoo creates a payment transaction associated with the order:
 
 ```text
 sale.order
@@ -250,13 +284,13 @@ sale.order
 payment.transaction
 ```
 
-### 4. Odoo creates the Monime payment
+The Monime provider handles the transaction-specific payment processing.
 
-The module sends the required payment information to Monime.
+## 4. Odoo creates a Monime Checkout session
 
-The request should contain the information required to identify the Odoo transaction and order.
+The addon sends the required transaction information to the Monime API and creates a Checkout session.
 
-For example:
+The request contains information such as:
 
 ```text
 Reference
@@ -268,9 +302,11 @@ Success URL
 Cancel URL
 ```
 
-### 5. Customer completes payment
+Monime returns the Checkout information, including the URL used to redirect the customer.
 
-The customer is redirected to Monime Checkout.
+## 5. Customer completes payment
+
+The customer is redirected from Odoo to Monime Checkout:
 
 ```text
 Odoo
@@ -282,64 +318,108 @@ Monime Checkout
 Customer Payment
 ```
 
-### 6. Monime sends a webhook
+The customer completes the payment using an available Monime payment method.
 
-After the payment state changes, Monime sends a webhook to Odoo.
+## 6. Payment result is returned to Odoo
+
+After completing or cancelling the checkout, the customer is returned to the corresponding Odoo payment flow.
+
+Odoo uses the transaction reference to identify the associated payment transaction.
+
+## 7. Optional webhook notification
+
+When webhook integration is enabled, Monime also sends a server-to-server notification to Odoo when the payment status changes:
 
 ```text
 Monime
    │
    │ webhook
    ▼
-Odoo Controller
+Odoo Webhook Controller
 ```
 
-### 7. Odoo updates the transaction
+The webhook handler validates the notification and processes the corresponding Odoo transaction.
 
-The webhook handler identifies the corresponding Odoo transaction and updates its state.
+## 8. Transaction state is updated
+
+The payment transaction is updated according to the payment result:
 
 ```text
 payment.transaction
         │
-        ▼
-confirmed / pending / canceled / error
+        ├── pending
+        ├── done
+        ├── cancel
+        └── error
 ```
 
-The Odoo order can then proceed according to its normal payment workflow.
+Odoo then continues its normal payment and order processing workflow.
 
 ---
 
 # Webhooks
 
-The module includes a webhook controller for receiving payment events from Monime.
+The addon includes a webhook controller for receiving payment events from Monime.
 
-The endpoint will be exposed by the Odoo HTTP controller.
+Webhook processing is **optional**. The normal customer return flow can be used without configuring webhooks.
 
-The exact endpoint is defined by the module's controller implementation.
+However, webhook integration is **recommended** because it allows Monime to communicate payment status directly to Odoo independently of the customer's browser session.
 
-Example:
+This is particularly useful when:
+
+* The customer closes the browser after completing payment.
+* The customer loses their connection during the redirect.
+* The payment status changes after the initial checkout response.
+* Odoo needs a server-to-server confirmation from Monime.
+
+## Webhook Endpoint
+
+The addon exposes a webhook endpoint through its Odoo HTTP controller.
+
+The endpoint is configured in the Monime environment and should point to the Odoo instance hosting the addon.
+
+For example:
 
 ```text
 https://your-odoo-domain.com/monime/webhook
 ```
 
-Configure the corresponding URL in your Monime environment.
+The exact route is defined by the controller implementation.
 
 ## Webhook Security
 
-Webhook requests should be verified before changing an Odoo transaction.
+Webhook requests are validated before they are used to update an Odoo transaction.
 
-The webhook handler should:
+The webhook processing flow is:
 
-1. Receive the request.
-2. Validate the webhook signature.
-3. Identify the Monime payment.
-4. Locate the corresponding Odoo transaction.
-5. Verify the transaction amount/currency where applicable.
-6. Update the Odoo transaction state.
-7. Return an appropriate HTTP response.
+```text
+Monime Webhook
+      │
+      ▼
+Signature Validation
+      │
+      ▼
+Payment Identification
+      │
+      ▼
+Transaction Lookup
+      │
+      ▼
+Amount/Currency Validation
+      │
+      ▼
+Transaction State Update
+```
 
-Do not trust an incoming webhook simply because it contains a valid-looking transaction ID.
+The handler:
+
+1. Receives the Monime webhook request.
+2. Validates the Monime webhook signature.
+3. Identifies the corresponding Monime payment.
+4. Locates the associated Odoo payment transaction.
+5. Validates relevant transaction information such as amount and currency.
+6. Updates the Odoo transaction state.
+7. Returns an appropriate HTTP response.
 
 ---
 
@@ -373,8 +453,6 @@ MonimeGateway/
         └── icon.svg
 ```
 
-The exact structure may change as development continues.
-
 ---
 
 # Main Components
@@ -383,23 +461,35 @@ The exact structure may change as development continues.
 
 Defines the Odoo module metadata, dependencies, assets, and XML data files.
 
-Example:
+For example:
 
 ```python
 {
     "name": "Monime Gateway",
     "version": "1.0.0",
+    "summary": "Monime Gateway payment addon",
     "category": "Accounting/Payment Providers",
-    "depends": [
-        "payment",
-    ],
     "data": [
+        "data/payment_method_data.xml",
         "data/payment_provider_data.xml",
-        "views/payment_provider_views.xml",
+        "views/monime_redirection.xml",
+        "views/monime_settings_views.xml",
     ],
+    "post_init_hook": "post_init_hook",
+    "description": "Monime Official payment gateway addon for odoo ",
+    "assets": {
+        "web.assets_backend": [
+            "MonimeGateway_odoo/static/src/style.css",
+        ],
+    },
+    "author": "Monime",
+    "license": "LGPL-3",
+    "depends": ["payment", "account"],
     "installable": True,
-    "application": False,
+    "application": True,
 }
+
+
 ```
 
 ## `models/payment_provider.py`
@@ -410,7 +500,7 @@ Extends Odoo's:
 payment.provider
 ```
 
-This is where the Monime provider's behavior is implemented.
+This component implements the Monime-specific payment provider behavior.
 
 The provider identifies itself using:
 
@@ -418,7 +508,7 @@ The provider identifies itself using:
 code = "monime"
 ```
 
-and contains the provider-specific configuration and payment logic.
+It also contains the Monime-specific configuration fields and payment request logic.
 
 ## `models/payment_transaction.py`
 
@@ -428,25 +518,26 @@ Extends:
 payment.transaction
 ```
 
-This handles the Monime-specific transaction behavior.
+This component handles Monime-specific payment transaction processing.
 
-Typical responsibilities include:
+Its responsibilities include:
 
-* Creating payment requests
-* Processing payment responses
-* Handling transaction references
-* Processing notification data
-* Updating transaction states
+* Creating Monime payment requests.
+* Processing payment responses.
+* Handling transaction references.
+* Processing payment notification data.
+* Updating transaction states.
+* Integrating Monime payment results with Odoo's transaction workflow.
 
 ## `controllers/webhook.py`
 
 Receives webhook notifications from Monime.
 
-Its responsibility is to pass verified Monime events into Odoo's payment transaction system.
+The controller validates incoming webhook requests and passes verified payment information to Odoo's payment transaction system.
 
 ## `data/payment_provider_data.xml`
 
-Creates the Monime payment provider record:
+Defines the Monime payment provider record:
 
 ```xml
 <record id="payment_provider_monime" model="payment.provider">
@@ -457,200 +548,30 @@ Creates the Monime payment provider record:
 
 ## `views/payment_provider_views.xml`
 
-Extends Odoo's payment provider interface with Monime-specific configuration.
+Extends Odoo's payment provider configuration interface with Monime-specific configuration fields.
 
 ---
 
-# Development
+# Current Limitations
 
-Clone the repository:
+The current version of the addon has the following scope:
 
-```bash
-git clone https://github.com/Alhakan501/MonimeGateway.git
-cd MonimeGateway
-```
+### Supported
 
-If you're developing against an Odoo Docker installation, mount the repository into the Odoo addons directory.
+* Odoo 19
+* Odoo eCommerce payments
+* Odoo payment provider integration
+* Monime Checkout
+* Odoo payment transactions
+* Monime webhook notifications
+* Webhook signature validation
+* Payment status synchronization
 
-For example:
+### Not currently supported
 
-```yaml
-services:
-  odoo:
-    volumes:
-      - ./addons:/mnt/extra-addons
-```
+* **Odoo POS terminal integration**
 
-Then place the addon at:
-
-```text
-addons/MonimeGateway
-```
-
-Restart Odoo:
-
-```bash
-docker compose restart odoo
-```
-
----
-
-# Updating the Module During Development
-
-After changing Python code:
-
-```bash
-docker compose restart odoo
-```
-
-After changing XML, views, or module data:
-
-```bash
-docker compose exec odoo odoo \
-    -d odoo_test \
-    -u MonimeGateway \
-    --stop-after-init
-```
-
-Then start Odoo again:
-
-```bash
-docker compose up -d
-```
-
----
-
-# Debugging
-
-View the Odoo logs:
-
-```bash
-docker compose logs -f odoo
-```
-
-Or:
-
-```bash
-docker logs -f odoo-odoo-1
-```
-
-To update the module and immediately see installation errors:
-
-```bash
-docker compose exec odoo odoo \
-    -d odoo_test \
-    -u MonimeGateway \
-    --stop-after-init
-```
-
-This is particularly useful for diagnosing:
-
-* Python import errors
-* XML parsing errors
-* View inheritance errors
-* Missing external IDs
-* Model registration errors
-* Payment provider errors
-* Webhook errors
-
----
-
-# Security
-
-Payment credentials must never be committed to the repository.
-
-Do not put credentials directly into:
-
-```python
-payment_provider.py
-```
-
-or:
-
-```python
-__manifest__.py
-```
-
-Do not commit:
-
-```text
-API tokens
-Webhook secrets
-Private keys
-Production credentials
-Database passwords
-```
-
-Webhook requests should also be authenticated and validated before modifying payment transactions.
-
----
-
-# Current Development Status
-
-The project is currently under development.
-
-### Implemented / In Development
-
-* [x] Odoo payment provider model
-* [x] Monime provider registration
-* [x] Odoo payment provider view
-* [ ] Monime API integration
-* [ ] Payment creation
-* [ ] Payment redirect
-* [ ] Transaction processing
-* [ ] Webhook verification
-* [ ] Webhook transaction updates
-* [ ] Production configuration
-* [ ] Automated tests
-* [ ] Odoo eCommerce end-to-end testing
-
-The checklist will be updated as functionality is completed.
-
----
-
-# Roadmap
-
-* [ ] Complete Monime API client integration
-* [ ] Implement payment creation
-* [ ] Implement checkout redirect
-* [ ] Implement transaction state handling
-* [ ] Implement webhook signature verification
-* [ ] Implement webhook event processing
-* [ ] Add configurable Monime credentials
-* [ ] Add payment-method configuration
-* [ ] Add comprehensive error handling
-* [ ] Add automated tests
-* [ ] Test Odoo eCommerce checkout
-* [ ] Prepare production release
-
----
-
-# Contributing
-
-Contributions are welcome.
-
-1. Fork the repository.
-2. Create a feature branch:
-
-```bash
-git checkout -b feature/your-feature
-```
-
-3. Make your changes.
-4. Test the module against Odoo 19.
-5. Commit your changes:
-
-```bash
-git commit -m "Add your feature"
-```
-
-6. Push the branch:
-
-```bash
-git push origin feature/your-feature
-```
-
-7. Open a pull request.
+The addon does not currently implement Monime as a native payment terminal/payment method inside Odoo POS.
 
 ---
 
@@ -670,9 +591,3 @@ https://monime.io
 
 **Odoo:**
 https://www.odoo.com
-
----
-
-## Disclaimer
-
-This project is an independent Odoo integration for Monime. It is not an official Odoo module unless explicitly stated otherwise.
